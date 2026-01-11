@@ -10,8 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -27,49 +26,19 @@ jobs:
           rm -rf project
           mkdir -p project
           unzip -o BodyFuelCalculator_AndroidProject.zip -d project
-          echo "== Top level after unzip =="
+          echo "== after unzip =="
           ls -la project
+          echo "== bodyfuel folder =="
+          ls -la project/BodyFuelCalculator
 
-      - name: Locate Gradle project (gradlew)
-        shell: bash
-        run: |
-          GRADLEW_PATH="$(find project -maxdepth 6 -type f -name gradlew -print -quit)"
-          if [ -z "$GRADLEW_PATH" ]; then
-            echo "❌ gradlew not found. Your ZIP may not contain a full Gradle Android project."
-            echo "Show tree for debug:"
-            find project -maxdepth 4 -type f | head -n 200
-            exit 1
-          fi
-
-          ROOT_DIR="$(dirname "$GRADLEW_PATH")"
-          echo "✅ Found gradlew at: $GRADLEW_PATH"
-          echo "ROOT_DIR=$ROOT_DIR" >> $GITHUB_ENV
-
-      - name: Set up Gradle cache
+      - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build Debug APK
-        shell: bash
-        run: |
-          cd "$ROOT_DIR"
-          chmod +x ./gradlew
-          ./gradlew --version
-          ./gradlew :app:assembleDebug --no-daemon
-
-      - name: Locate APK
-        shell: bash
-        run: |
-          APK_PATH="$(find "$ROOT_DIR" -type f -path "*/app/build/outputs/apk/*/app-*.apk" -print -quit)"
-          if [ -z "$APK_PATH" ]; then
-            echo "❌ APK not found. Listing outputs:"
-            find "$ROOT_DIR/app/build/outputs" -maxdepth 6 -type f || true
-            exit 1
-          fi
-          echo "✅ APK_PATH=$APK_PATH"
-          echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
+        run: gradle -p project/BodyFuelCalculator :app:assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: ${{ env.APK_PATH }}
+          path: project/BodyFuelCalculator/app/build/outputs/apk/debug/app-debug.apk
