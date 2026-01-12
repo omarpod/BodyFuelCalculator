@@ -15,8 +15,12 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: 17
+
+      # ✅ مهم: تجهيز Android SDK
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
       - name: Install unzip
         run: sudo apt-get update && sudo apt-get install -y unzip
@@ -24,21 +28,19 @@ jobs:
       - name: Unzip project
         run: |
           rm -rf project
-          mkdir -p project
           unzip -o BodyFuelCalculator_AndroidProject.zip -d project
-          echo "== after unzip =="
           ls -la project
-          echo "== bodyfuel folder =="
           ls -la project/BodyFuelCalculator
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
+      # ✅ شغّل Gradle Wrapper لو موجود
       - name: Build Debug APK
-        run: gradle -p project/BodyFuelCalculator :app:assembleDebug --no-daemon
+        run: |
+          cd project/BodyFuelCalculator
+          chmod +x gradlew || true
+          ./gradlew :app:assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: project/BodyFuelCalculator/app/build/outputs/apk/debug/app-debug.apk
+          path: project/BodyFuelCalculator/app/build/outputs/apk/debug/*.apk
